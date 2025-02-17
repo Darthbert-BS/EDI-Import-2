@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <VersionMajor>2</VersionMajor>
+    <VersionMinor>1</VersionMinor>
+    <VersionPatch Condition="'$(VersionPatch)' == ''">$([System.DateTime]::UtcNow.ToString("yyMM"))</VersionPatch>
+    <VersionRevision Condition="'$(VersionRevision)' == ''">$([System.DateTime]::UtcNow.TimeOfDay.TotalMinutes.ToString("0"))</VersionRevision>
+    <BuildVersion>$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</BuildVersion>
+    <Year Condition="'$(Year)' == ''">$([System.DateTime]::UtcNow.ToString("yyyy"))</Year>
+    <Configurations>Debug;Release;Development;Staging</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>BundabergSugar.EDIImport</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    
+    <AssemblyName>EDI Import</AssemblyName>
+    <Name>EDI Import</Name>
+    <Title>EDI Import</Title>
+    <Product>EDI Import</Product>
+    <Company>Bundaberg Sugar</Company>
+    <Description>A tool to import EDI files.</Description>
+    <PackageProjectUrl></PackageProjectUrl>
+    <PackageId>Edi Import</PackageId>
+    <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Bundaberg-Sugar-Ltd/syspro-repos/tree/develop/Applications/EDI%20Import</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>$(BuildVersion)</Version>
+    <AssemblyVersion>$(BuildVersion)</AssemblyVersion>
+    <AssemblyFileVersion>$(BuildVersion)</AssemblyFileVersion>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyCopyright">
+      <_Parameter1>Copyright © Bundaberg Sugar 2014 - $(Year)</_Parameter1>
+    </AssemblyAttribute>
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.0.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="log4net.Development.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadMe.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
+
+</Project>
+

@@ -1,0 +1,76 @@
+
+
+16-FEB-2023
+
+Notes for project EDI Import.
+
+ALDI-V2 Implementation (2022/2023) requires changes to some EDI elements.
+
+
+
+
+
+
+[if].[EDIDetailInsert]
+
+Stored Proc : [if].[EDIHeaderUpdateTotals]
+
+[Custom].[if].[SORTOI_EDIHeader]
+
+[if].[EDIHeaderInsert]
+[if].[EDIDetailInsert]
+
+
+
+
+Stored procedure to create the header --- including the Requested Delivery Date.
+
+
+This means the EDIImport program may need to call multiple EDIHeaderInserts ...
+
+How ?
+
+REQUESTED DELIVERY DATE ===> REQDD
+
+
+If the REQDD is visible in the DETAIL records ....  and there are multiple RDDs .... then we need to treat like
+seperate files.... somehow.
+
+
+Maybe a pre-parser that looks at the file and determins how man REQDDs there are.
+
+Loop
+
+The when processing the file,  filter only the REQDD passed in 
+
+
+
+
+For example :  importer.Import(fileEntries, DFMID, Company)    ==>   importer.Import(fileEntries, DFMID, Company,  RequestedDeliveryDate);
+
+
+new method to get a list of REQDDs   
+
+
+
+Actually ...
+
+LoadEDItoTable(fileName, _dbc, _dbt, dFmid, company)  ==>  LoadEDItoTable(fileName, _dbc, _dbt, dFmid, company, RequestedDeliveryDate )
+
+May need to know if it is a header REQDD or LINEREQDD
+
+
+-------
+
+Pre-Processor.....
+
+Scan the InputFileLocation reading each file... determine 
+
+IF  file a Header REQDD
+	move to intermediate-processing-folder
+ELSE
+	Foreach Line REQDD
+		write a new file grouped by the REQDD 
+		New file has formated with Header REQDD
+	END LOOP
+END IF
