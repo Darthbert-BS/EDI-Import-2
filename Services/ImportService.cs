@@ -81,8 +81,9 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
                         
                         // update the archive
                         var update = await UpsertFileToArchiveAsync(dataFile, isUpdate: true);  
-                        if (import.Success && result.Success) {
-                            // remove the physical file to avoid reprocessing from it 
+
+                        // remove the physical file to avoid reprocessing from it     
+                        if (update.Success) {
                             dataFile.CloseReader();
                             RemovePhysicalFile(file); 
                         } 
