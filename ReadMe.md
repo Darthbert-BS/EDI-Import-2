@@ -20,12 +20,119 @@ Each file will go through the following steps:
 
 * The file is loaded in memory. Once loaded the text content is written to the `[dbo].[EDIImport_archive]`  table with the Status set to `New`
 * The file is composed of at minimum 3 lines: Header, Detais, and Summary
-* A transaction is open in the database and the header is processed and stored. If the Header is an update to an existing Purchase Order the archive table is updated with the AMENDEDPO status and the 'This is an update to an existing Purchase Order : PO Number for Customer : CustNumber', and the file is skipped. 
+* A transaction is open in the database and the header is processed and stored. If the Header is an update to an existing Purchase Order the archive table is updated with the AMENDEDPO status and the 'This is an update to an existing Purchase Order : PO Number for Customer : CustNumber', and the file is skipped.
 * Subsequently, Each Detail line is processed and stored in the database.  
 * Lastly the Summary Line is processed and stored.
 * Once all the sections are processed successfully the transaction is committed and the system moves to the next file. If there is an error during the processing of any of the lines, the exception information is stored in the text log  configured  in the  `FileLogger.FilePath` entry in the `Logging` section of `appsettings.json` AND in the database specified in the `DBLogger.ConnectionString`  entry in the `Logging` section of `appsettings.json`.
 
-## New Requirements
+
+### Classes and Dependencies
+
+The application depends on the .Net Core 8 framework. Additonally it depends on the:
+
+* `CsvHelper" Version=33.0.1`,
+* `Microsoft.Data.SqlClient Version=6.0.1`,
+* `Microsoft.Extensions.DependencyInjection Version=9.0.2` and
+* `Microsoft.Extensions.Hosting Version=9.0.2` libraries
+
+The main classes for the application are the:
+
+* `ImportService`,
+* `DatabaseService`,
+* `EdiData`,
+* `ApplicationOptions` and
+* `ILogger`.  
+
+#### DatabaseService
+
+The `DatabaseService` implementss the IDatabaseService interface. It is responsible to mantain the connection to the database and manage the transactions. It exposes three public methods:
+
+* `SqlTransaction GetExclusiveLock(string table = "EDIImport_lock")`, responsible to start a transaction and get an exclusive lock on the tables,
+* `SqlCommand GetSqlCommand(string commandText, CommandType commandType = CommandType.StoredProcedure)` responsible to get a SlCommandObject configued with the current transaction
+* `void ReleaseExclusiveLock(bool commit = true, bool rollback = true)` responsible for comminting or rolling back the current transaction in case of error, and releasinf the lock.
+
+#### ApplicatioOptions
+
+The `AppplicationOptions` class implements the IApplicatioOptions interface and is rtesponsible to provide configuration data to the services. It depends on the data stored in the `appsettings.json` and `appsettings.<ENVIRONMENT>.json` files 
+
+#### EdiData
+
+The EdiData stores the reader for the file and provides values for processing.
+
+It exposes the following public properties:
+
+* FileInfo EdiFile
+* CsvReader Reader
+* Content
+* EdiFileStatus Status
+* string ErrorMessage
+* string EdiCompanyDb
+* string EdiPurchaseOrder
+* string EdiCustNumber
+* string EdiVersion
+* public int EdiBatchIdpublic
+* int EdiHeaderId
+* int EdiRunningQty
+* int EdiRecordCount
+* bool EdiIsAldi
+
+And the following public methods:
+
+* `string GetValue<TEnum>(TEnum attribute) where TEnum: Enum`, this is a generic method that accepts an enum of any type (EdiHeader, EdiDetail, EdiSummary) and returns the associated value.
+* `EdiRowType GetRowType()` returns the type of row being read (Header,
+    Detail, Summary, or Other).  
+* `int GetRowQuantity()` gets an numeric quantity from the file,
+* `void ResetReader()` responsible for resetting the reader at the top after a read operation has been performed. 
+* `void CloseReader()` responsivle for closing the reader at the end of the import operation so that the physical file can be moved or deleted.
+
+#### ImportService
+
+The `ImportService` is the class responsible for loading and processing the EDI files.
+It depends on `IDatabaseService`, `IApplicationOptions`, and `ILogger` implementatiions.
+
+It has one public async method:
+
+* `Task ImportAsync` starts the import process, which involves reading the files from the input file location, loading the data into the database, and then archiving the files. This will only run if the application is enabled. If the application is not enabled, it will simply return.
+  
+It implements the following  Business Rules:
+
+1. If no files are found in the input file location, it will return without doing anything.
+2. If files are found, it will process each file and import the data into the database.
+3. After processing all files, it will archive the files in the archive table.
+4. The file Header in the first row contain information about the Customer, PO, and PO Version.
+   * The PO Version is checked to see if it's a new order or an amended one.
+   * If the version is not empty AND is NOT 000 it's an amended or updated order These orders are marked as such and not imported.
+   * If the version is empty OR is 000 it's a new order. Check if overlapping and if so mark as error and do no not import.
+5. When processing details if the productNumber is null or empty, it will try to get the GTIN from the stockCode.
+   * If the GTIN is not found, it will mark the record as an error and not import.
+6. Aldi EDI Files have a custom process.
+   * Aldi can send EDI Files with or without price, and unitOfMeasure. Also Aldi can send pallet orders.
+   * If unitOfMeasure is 200, then the quantity is calculated by multiplying the quantity in the order by the number of items in the pallet. The number of items in the pallet is retrieved by queryng the database with company and stock code. The unit of measure is then set to Pallet (CT).
+   * The price for Aldi items is retrieved by querying the database as well. There are 2 methods for retrieving the price. If the first fails it will use the second. If both are unable to retrieve the price, then the price is set to 0.
+   * Finally the additionalPartNumber is set to the AldiStockCode.  
+
+Error Rules:
+
+1. If any of the files fails to open, it will log the error and continue to the next file.
+2. If any of the files fails to archive, it will log the error and continue to the next file.
+3. If any of the files fails to update the archive table, it will log the error and continue to the next file.
+4. If any of the files fails to delete, it will log the error and continue to the next file.
+5. If it cannot determine the Header of the row it will log the error and continue to the next file.
+6. If it determines that the order is an amended or update order, it will log the error and continue to the next file.
+7. If ti determines that the order is overlapping (same order for customer) it will log the error and continue to the next file.
+8. If it cannot determine the GTIN for the product number, it will log the error and continue to the next file.
+9. If it cannot determine the pallet quantity, it will log the error and continue to the next file.
+10. If it cannot save the detail data to the database, it will log the error and continue to the next file.
+
+#### Logger
+
+The loggers implement the Microsoft ILogger interface. The previous version used Log4Net but due to some issues with using the database adapter with .Net Core 8 that dependency was scrapped and a custom File Logger and DB Logger were developen.
+
+The `File Logger` logs events to a text file. It can be connfigures in a similar fashion to Log4Net in the `appsettings.json` with the ability to filter log events, and customize where the log file is kept. It also allows to set maximum size for log files and autobackups.
+
+The `Database Logger` can be configured similarly and logs to the table and fields specified in the `appsettings.json` and it also has the ability to filter log events.
+
+### New Requirements
 
 ### File Re-Execution
 
@@ -47,6 +154,7 @@ The File will have the following statuses:
 ### Modify existing database schema
 
 The archival table is specified by the following SQL:
+
 ```sql
 CREATE TABLE [dbo].[EDIImport_archive] (
     [ArchiveId] int IDENTITY(1, 1) NOT NULL,
@@ -72,8 +180,8 @@ Testing should be done on the server TITAN.
 A collection of recent EDI log files are in the `TestData` subdirectory.
 
 Testing the data persistence can be done with these queries:
-```sql
 
+```sql
     SELECT Top(50) * FROM [Custom].[dbo].[EventLog] Order By EventID DESC;
     SELECT Top(50) * FROM [Custom].[dbo].[EventLog]  WHERE Level = 'ERROR' Order By EventID DESC;
     SELECT Top(50) * FROM [Custom].[dbo].[EDIImport_archive] ORDER BY ArchiveId DESC;
@@ -86,7 +194,6 @@ Testing the data persistence can be done with these queries:
     SELECT * FROM [Custom].[if].[SORTOI_EDIDetail] 
         WHERE BatchID IN (SELECT BatchID FROM BatchIDs)
         ORDER BY BatchID;
-
 ```
 
 After testing, data cleanup can be done by running the following SQL statements and replacing `<REQUESTOR>` with the username of the contest running the app (e.g.: BUNDY\yourusername) :
@@ -148,17 +255,15 @@ When specifying an enviromnet other than `production` a corresponding `appsettin
 If no `appsetting.json` file is found the application will terminate.
 
 An example of how to run the application in staging is as follows:  
+
 ```sh
 "EDI Import.exe" -e Staging
 or 
 "EDI Import.exe" --environment Staging
-
 ```
-
 
 ## Additional information
 
 Notes from the previous version can be found [here](./_notes.txt)
-
 
 [Link]: https://github.com/Bundaberg-Sugar-Ltd/syspro-repos/tree/develop/Applications/EDI%20Import

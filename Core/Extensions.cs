@@ -128,7 +128,8 @@ public static class FileInfoExtensions {
 
         // Analyze the BOM
         if (bom[0] == 0x2b && bom[1] == 0x2f && bom[2] == 0x76)
-            return Encoding.UTF7;
+            // Encoding.UTF7;
+            throw new NotSupportedException("Encoding.UTF7 is obsolete: The UTF-7 encoding is insecure and should not be used. [https://learn.microsoft.com/en-us/dotnet/fundamentals/syslib-diagnostics/syslib0001]"); 
         if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf)
             return Encoding.UTF8;
         if (bom[0] == 0xff && bom[1] == 0xfe && bom[2] == 0x00 && bom[3] == 0x00)
