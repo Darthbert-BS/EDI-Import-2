@@ -8,18 +8,21 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Development|Any CPU = Development|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Production|Any CPU = Production|Any CPU
 		Staging|Any CPU = Staging|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Development|Any CPU.ActiveCfg = Development|Any CPU
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Development|Any CPU.Build.0 = Development|Any CPU
-		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Production|Any CPU.ActiveCfg = Production|Any CPU
+		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Production|Any CPU.Build.0 = Production|Any CPU
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Staging|Any CPU.Build.0 = Staging|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85F06172-26C2-4937-A4C8-40691A079E50}
 	EndGlobalSection
 EndGlobal

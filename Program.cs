@@ -61,33 +61,39 @@ internal class Program {
 
     static async Task Main(string[] args) {
         try {
-        #region Configure the application            
-            Console.WriteLine($"ENVIRONMENT: {Environment.GetEnvironmentVariable("ENVIRONMENT")}");
-          
-            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-            builder.Configuration.Sources.Clear();
-            
-            IHostEnvironment env = builder.Environment;
-            builder.Configuration.AddEnvironmentVariables();
-            builder.Configuration
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true);
 
-            var configurationManager = builder.Configuration;
-            var services = builder.Services;
+        #region Configure the application            
+            
+            // Check if there is an environment parameter
+            CheckEnvironment(args);
+
+            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            ConfigurationManager config = builder.Configuration;
+            IHostEnvironment env = builder.Environment;
+            IServiceCollection services = builder.Services;
+
+            config.Sources.Clear();
+           
+            // appsettings.json has production values.
+            config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            // if environment is not production, use appsettings.env.json
+            if (!env.IsProduction()) {
+                config.AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true);
+            }
+            // Adds any additional server set environment variables
+            config.AddEnvironmentVariables();
 
             //Setting up Logging 
             if (env.IsDevelopment()) {
                services.AddLogging(logBuilder => logBuilder.AddDebug());
-            } else {
-               services.AddLogging(logBuilder => logBuilder.AddConsole());
             }
+            services.AddLogging(logBuilder => logBuilder.AddConsole());
             services.AddLogging(logBuilder => logBuilder.AddDataBaseLogger());
             services.AddLogging(logBuilder => logBuilder.AddFileLogger());
            
             //Configuring the application options
             ApplicationOptions appOptions = new();  
-            builder.Configuration.GetSection(nameof(ApplicationOptions)).Bind(appOptions);
+            config.GetSection(nameof(ApplicationOptions)).Bind(appOptions);
             services.AddSingleton<IApplicationOptions>(appOptions);
 
             // Setting up the dependency injection Services
@@ -101,8 +107,10 @@ internal class Program {
            
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
             try {
-                logger.LogInformation(AppEventId, "Starting App: {assembly.Name}, Version: {assembly.Version}, Environment: {env}", 
-                    Utils.GetAppName(), Utils.GetAppVersion(), env.EnvironmentName);
+                logger.LogInformation(AppEventId, "Starting App: {assembly.Name}, Version: {assembly.Version}, Environment: {app}", 
+                    Utils.GetAppName(), Utils.GetAppVersion(), appOptions.Environment);
+
+                logger.LogInformation(AppEventId, "Connectiong to: {conn}", appOptions.ConnectionString);
 
                 logger.LogInformation(AppEventId, "Program Started. User ID = {userName}", Utils.GetUserName());                
 
@@ -120,6 +128,35 @@ internal class Program {
         } catch (Exception ex) {
             Task.Delay(15000).Wait();
             Console.WriteLine(ex.Message);
+        }
+    }
+
+
+    /// <summary>
+    /// Checks if there is an environment parameter passed as a command line argument.
+    /// If found, sets the environment variable DOTNET_ENVIRONMENT to the value passed.
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
+    private static void CheckEnvironment(string[] args) {
+        string environment = string.Empty;        
+        var environments =  new[] { "development", "staging", "production" };
+        // If no args passed, return
+        if (args.Length == 0) return;
+
+        // check if there is an environment parameter    
+        for (int i = 0; i < args.Length; i++) {
+            if ((args[i] == "--environment" || args[i] == "-e") && i + 1 < args.Length) {
+                environment = args[i + 1].Trim().ToLower();
+                bool exists = Array.Exists(environments, e => e == environment);
+                if (exists) {
+                    // Set the environment variable
+                    Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", environment);                
+                } else       {
+                    Console.WriteLine($"Invalid Environment: {environment}");
+                    Environment.Exit(1);
+                }                    
+                break;
+            }
         }
     }
 

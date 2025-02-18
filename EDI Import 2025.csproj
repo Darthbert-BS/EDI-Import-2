@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Versioning and Assembly Info -->
   <PropertyGroup>
     <VersionMajor>2</VersionMajor>
     <VersionMinor>1</VersionMinor>
@@ -7,7 +8,7 @@
     <VersionRevision Condition="'$(VersionRevision)' == ''">$([System.DateTime]::UtcNow.TimeOfDay.TotalMinutes.ToString("0"))</VersionRevision>
     <BuildVersion>$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</BuildVersion>
     <Year Condition="'$(Year)' == ''">$([System.DateTime]::UtcNow.ToString("yyyy"))</Year>
-    <Configurations>Debug;Release;Development;Staging</Configurations>
+    <Configurations>Debug;Release;Production;Development;Staging</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -16,8 +17,6 @@
     <RootNamespace>BundabergSugar.EDIImport</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
-    
     <AssemblyName>EDI Import</AssemblyName>
     <Name>EDI Import</Name>
     <Title>EDI Import</Title>
@@ -33,14 +32,15 @@
     <AssemblyVersion>$(BuildVersion)</AssemblyVersion>
     <AssemblyFileVersion>$(BuildVersion)</AssemblyFileVersion>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyCopyright">
       <_Parameter1>Copyright © Bundaberg Sugar 2014 - $(Year)</_Parameter1>
     </AssemblyAttribute>
-
   </ItemGroup>
 
+
+<!-- Dependencies -->
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
@@ -48,22 +48,49 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
   </ItemGroup>
 
+
+<!-- Configuration and Deployment -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU' ">
+  	<EnvironmentName>Development</EnvironmentName>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+		
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Staging|AnyCPU'">
+    <EnvironmentName>Staging</EnvironmentName>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+  
+	 <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
+	  <EnvironmentName>Production</EnvironmentName>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU'">
+    <None Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Staging|AnyCPU'">
+    <None Update="appsettings.Staging.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup> 
+
+<!-- Additional resources -->
   <ItemGroup>
-    <None Update="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="log4net.Development.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="ReadMe.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Logs\" />
-  </ItemGroup>
 
 </Project>
 

@@ -1,0 +1,25 @@
+{
+  "profiles": {
+    "EDI Import D": {
+      "commandName": "Project",
+      "commandLineArgs": "-e development",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    },
+    "EDI Import S": {
+      "commandName": "Project",
+      "commandLineArgs": "-e staging",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Staging"
+      }
+    },
+
+    "EDI Import P": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Production"
+      }
+    }
+  }
+}

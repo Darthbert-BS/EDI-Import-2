@@ -96,9 +96,29 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
     }
 
 
+    /// <summary>
+    /// Determines whether the application is enabled or disabled by checking the disabled status flag OR 
+    /// for the existence of a file specified in the DisabledFileLocation parameter.
+    /// The boolean flag takes precedence do if it is set to true the application will be disabled.
+    /// If it's set to false, then application will check for the existence of the file specified in the DisabledFileLocation parameter.
+    /// If found the application will be disabled.
+    /// The parameter can either be a fully qualified path e.g. C:/temp/disabled.text or just a filename. In the latter case the application will 
+    /// // look for the file in the current directory
+    /// </summary>
+    /// <param name="disabledFileLocation">The location of the file which disables the application if it exists.</param>
+    /// <returns>true if the application is enabled, false otherwise</returns>
     public bool IsApplicationEnabled(string disabledFileLocation) {
         try {
-            if (disabledFileLocation == null) return true;
+            // Takes precedence
+            if (options.Disabled == true) { 
+                logger.LogInformation(EventId, "Application has been disabled. Please change the Disabled flag to false to enable this application.");
+                return false;
+            }
+
+            // no need to check if there is no parameter set   
+            if (string.IsNullOrEmpty(disabledFileLocation)) return true;
+
+            // A parameter was found. Check if there is a match    
             var file = Path.IsPathRooted(disabledFileLocation) 
                 ? disabledFileLocation 
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, disabledFileLocation);

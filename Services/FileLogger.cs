@@ -94,44 +94,48 @@ public sealed class FileLogger(string name, Func<FileLoggerConfiguration> getCur
         Exception? exception,
         Func<TState, Exception?, string> formatter)
     {
-        // Make sure the logger is enabled and configured
-        if (!IsEnabled(logLevel)) {
-            Console.WriteLine($"{name} FileLogger is not enabled. Skipping.");    
-            return;
+        try{
+            // Make sure the logger is enabled and configured
+            if (!IsEnabled(logLevel)) {
+                Console.WriteLine($"{name} FileLogger is not enabled. Skipping.");    
+                return;
+            }
+            
+            // Check for read/rwite permissions
+            FileLoggerConfiguration config = getCurrentConfig();
+
+            if (!Directory.Exists(config.FilePath)) {
+                Directory.CreateDirectory(config.FilePath);
+                //nsole.WriteLine($"{name} FileLogger Error: Directory does not exists: {config.FilePath}. Logging to file is disabled.");
+                //turn;
+            }  
+            var file = Path.Join(config.FilePath, config.FileName);
+            if (!HasPermissions(Path.Join(config.FilePath, config.FileName))) {
+                Console.WriteLine($"{name} FileLogger Error: Cannot write to file: {file}. Logging to file is disabled.");
+                return;
+            }
+
+
+            // build the message
+            string message = formatter(state, exception);
+            string logHeader = $"{DateTime.Now:o} [{logLevel}] [{eventId.Id} - {eventId.Name}]";
+            string logEntry = $"{logHeader} {message}";
+            if (exception != null) {
+                logEntry += Environment.NewLine + $"{logHeader} {exception.GetType()} - {exception.StackTrace?.Trim() ?? "Stacktrace not found."}";
+            }    
+
+            // Check the file size and archives if needed        
+            if (File.Exists(file) && config.MaxFileSizeMB > 0) {
+                CheckFileSize(file, logEntry, config);
+            }
+
+            using var _writer = new StreamWriter(file, append: true);
+            _writer.WriteLine(logEntry);
+            _writer.Flush();
+            _writer.Close(); 
+        } catch (Exception ex) {
+            Console.WriteLine($"File Logger Error: {ex.Message}");
         }
-        
-        // Check for read/rwite permissions
-        FileLoggerConfiguration config = getCurrentConfig();
-
-        if (!Directory.Exists(config.FilePath)) {
-            Console.WriteLine($"{name} FileLogger Error: Directory does not exists: {config.FilePath}. Logging to file is disabled.");
-            return;
-        }  
-        var file = Path.Join(config.FilePath, config.FileName);
-        if (!HasPermissions(Path.Join(config.FilePath, config.FileName))) {
-            Console.WriteLine($"{name} FileLogger Error: Cannot write to file: {file}. Logging to file is disabled.");
-            return;
-        }
-
-
-        // build the message
-        string message = formatter(state, exception);
-        string logHeader = $"{DateTime.Now:o} [{logLevel}] [{eventId.Id} - {eventId.Name}]";
-        string logEntry = $"{logHeader} {message}";
-        if (exception != null) {
-            logEntry += Environment.NewLine + $"{logHeader} {exception.GetType()} - {exception.StackTrace?.Trim() ?? "Stacktrace not found."}";
-        }    
-
-        // Check the file size and archives if needed        
-        if (File.Exists(file) && config.MaxFileSizeMB > 0) {
-            CheckFileSize(file, logEntry, config);
-        }
-
-        using var _writer = new StreamWriter(file, append: true);
-        _writer.WriteLine(logEntry);
-        _writer.Flush();
-        _writer.Close(); 
-        
     }
 
     

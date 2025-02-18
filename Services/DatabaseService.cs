@@ -82,7 +82,7 @@ public class DatabaseService : IDatabaseService {
                 _currentTransaction.Commit(); // or transaction.Rollback() if you want to rollback
             } catch (Exception e) {
                 _logger.LogCritical(EventId, e,"Error committing transaction: {error}", e.Message);
-                if (!rollback) Environment.Exit(0);    
+                if (!rollback) Environment.Exit(1);    
                 _currentTransaction.Rollback();                                
             } finally {
                 _currentTransaction.Dispose();
@@ -108,7 +108,7 @@ public class DatabaseService : IDatabaseService {
             return connection;
         } catch (Exception e) {
             _logger.LogCritical(EventId, e,"Error Connectoing to database: {error}", e.Message);
-            Environment.Exit(0);    
+            Environment.Exit(1);    
             throw;
         }
     }

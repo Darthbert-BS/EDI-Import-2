@@ -121,6 +121,39 @@ After testing, data cleanup can be done by running the following SQL statements 
 ## Deployment Instructions
 
 The application is run non a timed task automatically on the testing and production server.
+The application has `Development`, `Staging`, and `Production` environment settings.
+
+To publish the app for Staging or Production there is a batch file [here](./publish.bat)
+
+The file accepts two parameters, '-env' and '-dir'. The `-env` parameter can be one of `D or Development`, `S or Staging`, or `P or Production`. the `-dir` parameter accepts any well formatted directory including network paths. If the directory does not exists, it will create it.
+
+To use it open a terminal window, navigate to the root directory of the project, and run the following command:
+
+```sh
+./publish.bat -env S -dir "\\Titan\c$\Program Files\BBS\FOCUS"
+```
+
+## Running the application
+
+The application can be run either inside a scheduled task or as a standalone console app.
+
+When running the application will load the necessary configuration parameters from the `appsetting.json` file, or from the `appsetting.<ENVIRONMENT>.json` file if an enviromnent was specified.
+
+The environment can be specified by either configuring the server variable `DOTNET_ENVIRONMENT` or by adding an argument `--environment or -e` to the application.
+
+Valid environments are `development`, `staging`, and `production`. If no environment is specified, the application defaults to production.
+
+When specifying an enviromnet other than `production` a corresponding `appsetting.<ENVIRONMENT>.json` file has top be present in the app root directory, or the app will default to the values in the `appsetting.json` file.
+
+If no `appsetting.json` file is found the application will terminate.
+
+An example of how to run the application in staging is as follows:  
+```sh
+"EDI Import.exe" -e Staging
+or 
+"EDI Import.exe" --environment Staging
+
+```
 
 
 ## Additional information
