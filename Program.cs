@@ -125,20 +125,21 @@ internal class Program {
                 logger.LogInformation(AppEventId, "Program Completed.");
 
                 WaitForInput(interactiveMode);   
-
+                
+                Environment.Exit(0);   
             
             } catch (Exception ex) {
                 logger.LogCritical(AppEventId, ex, "An error occurred creating the Application. {ex.msg}", ex.Message);
                 WaitForInput(interactiveMode);   
-
+                Environment.Exit(1);   
             }
 
         #endregion 
 
         } catch (Exception ex) {
             Console.WriteLine(ex.Message);
-            WaitForInput(interactiveMode);   
-
+            WaitForInput(interactiveMode);
+            Environment.Exit(1);   
         }
     }
 
