@@ -5,7 +5,7 @@ using CsvHelper.Configuration;
 
 namespace BundabergSugar.EDIImport.Models;
 
-internal class EDIData: IDisposable {
+public class EDIData: IDisposable {
     private readonly FileInfo _fileInformation;
     private readonly StreamReader _streamReader;
     private CsvReader _reader;

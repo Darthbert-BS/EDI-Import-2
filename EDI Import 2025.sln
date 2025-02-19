@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDI Import 2025", "EDI Import 2025.csproj", "{43958A62-CF61-4DC1-BFAF-2D72338752D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDI Import 2025 Unit Tests", "..\EDI Import 2025 Unit Tests\EDI Import 2025 Unit Tests.csproj", "{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Development|Any CPU = Development|Any CPU
@@ -18,6 +20,12 @@ Global
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Production|Any CPU.Build.0 = Production|Any CPU
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
 		{43958A62-CF61-4DC1-BFAF-2D72338752D9}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Production|Any CPU.ActiveCfg = Release|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Production|Any CPU.Build.0 = Release|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Staging|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF3CC57D-28EB-497A-AE73-5FCD64B028E9}.Staging|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

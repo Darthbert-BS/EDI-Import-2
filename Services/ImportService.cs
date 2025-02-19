@@ -15,7 +15,7 @@ public interface IImportService {
 }
 
 
-internal class ImportService(IDatabaseService db, IApplicationOptions options, ILogger<ImportService> logger ) : IImportService {
+public class ImportService(IDatabaseService db, IApplicationOptions options, ILogger<ImportService> logger ) : IImportService {
     private static readonly EventId EventId = new(2000, "EDI Import Service");
     private readonly List<FileInfo> Files = [.. Directory.GetFiles(options.InputFileLocation).Select(file => new FileInfo(file))];
     
@@ -39,8 +39,8 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
     /// 5. Aldi EDI Files have a custom process.
     ///    * Aldi can send EDI Files with or without price, and unitOfMeasure. Also Aldi can send pallet orders.
     ///    * If unitOfMeasure is 200, then the quantity is calculated by multiplying the quantity in the order by the number of 
-    //       items in the pallet. The number of items in the pallet is retrieved by queryng the database with company and stock code. 
-    //       The unit of measure is then set to Pallet (CT).
+    ///      items in the pallet. The number of items in the pallet is retrieved by queryng the database with company and stock code. 
+    ///       The unit of measure is then set to Pallet (CT).
     ///    * The price for Aldi items is retrieved by querying the database as well. The re are 2 mathods for retrieving the price.
     ///      If the first fails it will use the second. If both are unable to retrieve the price, then the price is set to 0.
     ///    * Finally the additionalPartNumber is set to the AldiStockCode.  
@@ -57,10 +57,9 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
     ///  9. If it cannot determine the pallet quantity, it will log the error and continue to the next file. 
     /// 10. If it cannot save the detail data to the database, it will log the error and continue to the next file.
     /// 
-    /// 
     /// </remarks>
     public async Task ImportAsync() {
-        // first check if apoplication is disabled
+        // first check if application is disabled
         if (!IsApplicationEnabled(options.DisabledFileLocation)) return;
 
         logger.LogInformation(EventId, "Starting import process for DFMID {dfmid} and Company {company}", options.DFMID, options.Company);
@@ -108,7 +107,7 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
     /// </summary>
     /// <param name="disabledFileLocation">The location of the file which disables the application if it exists.</param>
     /// <returns>true if the application is enabled, false otherwise</returns>
-    public bool IsApplicationEnabled(string disabledFileLocation) {
+    private bool IsApplicationEnabled(string disabledFileLocation) {
         try {
             // Takes precedence
             if (options.Disabled == true) { 
@@ -135,7 +134,6 @@ internal class ImportService(IDatabaseService db, IApplicationOptions options, I
             return false;
         }
     }
-
 
 
 
