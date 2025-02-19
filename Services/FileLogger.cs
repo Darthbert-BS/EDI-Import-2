@@ -34,8 +34,8 @@ public sealed class FileLoggerProvider : ILoggerProvider {
 public sealed class FileLoggerConfiguration {
     public int EventId { get; set; }
     public string FilePath { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public double MaxFileSizeMB  { get; set; }
+    public string FileName { get; set; } = "EdiImport.log";
+    public double MaxFileSizeMB  { get; set; } = 10;
     
 }
 

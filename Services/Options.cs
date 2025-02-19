@@ -12,7 +12,7 @@ public interface IApplicationOptions {
 }
 
 public sealed class ApplicationOptions: IApplicationOptions {
-    public string Environment { get; set;} = "Development";
+    public string Environment { get; set;} = "Production";
     public string DFMID {get; set ;} = "15";
     public string Company {get; set ;} = "1";  // Default DFM identifier to use for this application. DFMID's are defined in [Custom].[if].[DFM_Definition]
     public bool Disabled { get; set; } = false;

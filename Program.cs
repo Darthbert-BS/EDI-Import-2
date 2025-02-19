@@ -60,13 +60,18 @@ internal class Program {
     private static readonly EventId AppEventId = new(1000, "Main");
 
     static async Task Main(string[] args) {
+        bool interactiveMode = false;
         try {
 
-        #region Configure the application            
-            
-            // Check if there is an environment parameter
+        #region Command Line Arguments
             CheckEnvironment(args);
+            interactiveMode = IsInteractive(args);    
+            ShowVersion(args);
+            ShowHelp(args);
 
+        #endregion
+
+        #region Configure the application            
             HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
             ConfigurationManager config = builder.Configuration;
             IHostEnvironment env = builder.Environment;
@@ -95,7 +100,7 @@ internal class Program {
             ApplicationOptions appOptions = new();  
             config.GetSection(nameof(ApplicationOptions)).Bind(appOptions);
             services.AddSingleton<IApplicationOptions>(appOptions);
-
+            
             // Setting up the dependency injection Services
             services.AddSingleton<IDatabaseService, DatabaseService>();
             services.AddSingleton<IImportService, ImportService>();
@@ -110,26 +115,33 @@ internal class Program {
                 logger.LogInformation(AppEventId, "Starting App: {assembly.Name}, Version: {assembly.Version}, Environment: {app}", 
                     Utils.GetAppName(), Utils.GetAppVersion(), appOptions.Environment);
 
-                logger.LogInformation(AppEventId, "Connectiong to: {conn}", appOptions.ConnectionString);
+                logger.LogInformation(AppEventId, "Connecting to: {conn}", appOptions.ConnectionString);
 
                 logger.LogInformation(AppEventId, "Program Started. User ID = {userName}", Utils.GetUserName());                
 
                 var ImportService = host.Services.GetRequiredService<IImportService>();
                 await ImportService.ImportAsync();    
             
-                logger.LogInformation(AppEventId, "Program Completed.\r\n");
+                logger.LogInformation(AppEventId, "Program Completed.");
+
+                WaitForInput(interactiveMode);   
+
             
             } catch (Exception ex) {
-                logger.LogError(AppEventId, ex, "An error occurred creating the Application. {ex.msg}\r\n", ex.Message);
+                logger.LogCritical(AppEventId, ex, "An error occurred creating the Application. {ex.msg}", ex.Message);
+                WaitForInput(interactiveMode);   
+
             }
 
         #endregion 
 
         } catch (Exception ex) {
-            Task.Delay(15000).Wait();
             Console.WriteLine(ex.Message);
+            WaitForInput(interactiveMode);   
+
         }
     }
+
 
 
     /// <summary>
@@ -140,8 +152,16 @@ internal class Program {
     private static void CheckEnvironment(string[] args) {
         string environment = string.Empty;        
         var environments =  new[] { "development", "staging", "production" };
-        // If no args passed, return
-        if (args.Length == 0) return;
+        // If no args passed, check environment variable
+        // if no environment variable, set production and return
+        // if environment variable is set, return
+        if (args.Length == 0) {
+            // Set the environment variable
+            if ( string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")) ){
+                Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "production");    
+            }
+            return;
+        }
 
         // check if there is an environment parameter    
         for (int i = 0; i < args.Length; i++) {
@@ -159,5 +179,84 @@ internal class Program {
             }
         }
     }
+
+    private static bool IsInteractive(string[] args) {
+        return args.Contains("--interactive") || args.Contains( "-i");
+    }
+
+
+    private static void WaitForInput(bool enabled = false) {
+        if (enabled) {
+            Console.WriteLine("Press any key to continue...");
+            Console.Read();            
+            Console.WriteLine("Goodbye!");
+        }
+    }
+
+    public static void ShowVersion(string[] args){
+        if (args.Contains("--version") || args.Contains( "-v")) {
+            Console.WriteLine($"Name: {Utils.GetAppName()}");
+            Console.WriteLine($"Build: {Utils.GetAppVersion()}");
+            Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")}");
+            Console.WriteLine($"Current User: {Utils.GetUserName()}");
+            Console.WriteLine($"Interactive mode: {IsInteractive(args)}");
+            WaitForInput(true);
+            Environment.Exit(0);
+        }
+    }
+
+    public static void ShowHelp(string[] args){
+        if (args.Contains("--help") || args.Contains( "-h")) {
+            Console.WriteLine("EDI Import Configuration Help.");
+            Console.WriteLine($"App version: {Utils.GetAppVersion()}");
+            Console.WriteLine("");
+
+            Console.WriteLine("Command Line Arguments.");
+            Console.WriteLine("  --environment (-e): Sets the environment variable DOTNET_ENVIRONMENT to the value passed (development, staging, production).");
+            Console.WriteLine("  --interactive (-i): Pauses execution at the end for troubleshooting.");
+            Console.WriteLine("  --help        (-h): Shows the help.");
+            Console.WriteLine("  --version     (-v): Shows the current version.");
+            Console.WriteLine("");
+
+            Console.WriteLine("Application Options.");
+            Console.WriteLine("Values for configuring the application appsettings.<ENVIRONMENT>.json file. Remember production is the default and uses appsettings.json.");            
+            Console.WriteLine("  ApplicationOptions");
+            Console.WriteLine("    Environment: The running environment, Can be any of Development, Staging, Production");
+            Console.WriteLine("    ConnectionString: The connection string to the database. ");
+            Console.WriteLine("        Example: server=SYSPRO;Initial Catalog=Custom; Integrated Security=True; TrustServerCertificate=true; MultipleActiveResultSets=true");
+            Console.WriteLine("    Disabled: If true, the application will be disabled. Default is false");
+            Console.WriteLine("    DisabledFileLocation: An alternative method to disable the application."); 
+            Console.WriteLine("        Set to the path of the disabled.txt file. E.g.: C:/Program Files/BBS/FOCUS/EDI Import/disabled.txt");
+            Console.WriteLine("    DFMID: The DFM ID. Default is 15");
+            Console.WriteLine("    Company: The company ID. Default is 2");
+            Console.WriteLine("    InputFileLocation: The location of the input files.");
+            Console.WriteLine("        Example: C:/Program Files/BBS/FOCUS/EDI Import/Input/");
+            Console.WriteLine("");
+
+            Console.WriteLine("Logger Options.");
+            Console.WriteLine("Values for configuring the application Loggers");            
+            Console.WriteLine("  FileLogger");
+            Console.WriteLine("    FilePath: The path where to write tj=he log file.");
+            Console.WriteLine("        Example: C:/Program Files/BBS/FOCUS/EDI Import/");
+            Console.WriteLine("    FileName: The log file name. Default is EdiImport.log");
+            Console.WriteLine("    MaxFileSizeMB: The maximum size of the log file inn Megabytes. Default is 10. Set to 0 to disable chunking.");
+            Console.WriteLine("  DBLogger");
+            Console.WriteLine("    ConnectionString: The connection string to the database. ");
+            Console.WriteLine("        Example: server=SYSPRO;Initial Catalog=Custom; Integrated Security=True; TrustServerCertificate=true; MultipleActiveResultSets=true");
+            
+            Console.WriteLine("    TargetName: The name of the target table or Stored procedure. ");
+            Console.WriteLine("        Example: [dbo].[EventLog]");
+            Console.WriteLine("    TargetType: The type of the target: Table or StoredProcedure. ");
+            Console.WriteLine("        StoredProcedure is not implemented yet");
+            Console.WriteLine("    Parameters: An array of {FieldType, FieldName} parameters. ");
+            Console.WriteLine("        FieldName is the name of the column and @parameter to update. Case sensitive.");
+            Console.WriteLine("        FieldType is the type of data to store. Can be any of the following: [timeStamp, logLevel, system, subSystem, message, exception, stackTrace]. Case sensitive.");
+            Console.WriteLine("");
+
+            WaitForInput(true);
+            Environment.Exit(0); // exits successfully
+        };
+    }
+
 
 }

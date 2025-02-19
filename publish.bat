@@ -64,7 +64,7 @@ dotnet publish -c %env% -r win-x64 /p:PublishSingleFile=true /p:IncludeNativeLib
 
 REM Check if the build was successful
 IF %ERRORLEVEL% NEQ 0 (
-    echo Build failed!
+    REM echo Build failed! Error Level %ERRORLEVEL%
     exit /b %ERRORLEVEL%
 )
 
