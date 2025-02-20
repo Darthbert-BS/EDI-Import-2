@@ -1,4 +1,4 @@
-namespace BundabergSugar.EDIImport.Core;
+namespace BundabergSugar.EDIImport.Services.Import.Enums;
 
 public enum EdiFileStatus { 
     New,        // the file has been uploaded to the archive table successfully

@@ -5,7 +5,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
-namespace BundabergSugar.EDIImport.Core;
+
+using BundabergSugar.Core.Extensions;
+
+namespace BundabergSugar.Core.Providers.Logging;
 
 [UnsupportedOSPlatform("browser")]
 [ProviderAlias("DBLogger")]
@@ -122,7 +125,7 @@ public sealed class DBLogger(string name, Func<DBLoggerConfiguration> getCurrent
                         break;
                     case "system":
                         sqlParam.Size = parameter.FieldSize > 0 ? parameter.FieldSize : 50;
-                        sqlParam.Value = Utils.GetAppName().SafeSubstring(len: sqlParam.Size);
+                        sqlParam.Value = Common.GetAppName().SafeSubstring(len: sqlParam.Size);
                         break;
                     case "subSystem":
                         sqlParam.Size = parameter.FieldSize > 0 ? parameter.FieldSize : 50;

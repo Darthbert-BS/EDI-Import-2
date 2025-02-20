@@ -5,19 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
+using BundabergSugar.Core.Providers.Logging;
 
-namespace BundabergSugar.EDIImport.Core;
+namespace BundabergSugar.Core.Extensions;
 
-public static class CoreExtensions {
-    
-    public static ILoggingBuilder AddAllLoggers(this ILoggingBuilder builder) {
-        builder.AddConsole();
-        builder.Services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<ILoggerProvider, DBLoggerProvider>());
-        builder.Services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<ILoggerProvider, FileLoggerProvider>());
-        return builder;
-    }
+public static class LoggingExtensions {
 
     public static ILoggingBuilder AddDataBaseLogger(this ILoggingBuilder builder) {
         builder.AddConfiguration();
@@ -40,7 +32,6 @@ public static class CoreExtensions {
     }
 
 
-
     public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder) {
         builder.AddConfiguration();
         
@@ -57,7 +48,6 @@ public static class CoreExtensions {
     public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, Action<FileLoggerConfiguration> configure) {
         builder.AddFileLogger();
         builder.Services.Configure(configure);
-
         return builder;
     }
 }

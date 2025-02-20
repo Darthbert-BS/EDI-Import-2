@@ -51,7 +51,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using BundabergSugar.EDIImport.Core;
+
+using BundabergSugar.Core;
 using BundabergSugar.EDIImport.Services;
 
 namespace BundabergSugar.EDIImport;
@@ -59,6 +60,13 @@ namespace BundabergSugar.EDIImport;
 internal class Program {
     private static readonly EventId AppEventId = new(1000, "Main");
 
+        /// <summary>
+        /// The Main function is the entry point of the application.
+        /// </summary>
+        /// <param name="args">The command line arguments.</param>
+        /// <remarks>
+        /// The program will exit with a code of 1 if an error occurs. Otherwise, it will exit with a code of 0.
+        /// </remarks>
     static async Task Main(string[] args) {
         bool interactiveMode = false;
         try {
@@ -77,33 +85,19 @@ internal class Program {
             IHostEnvironment env = builder.Environment;
             IServiceCollection services = builder.Services;
 
+            // Setting up the application configuration
             config.Sources.Clear();
-           
-            // appsettings.json has production values.
             config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-            // if environment is not production, use appsettings.env.json
             if (!env.IsProduction()) {
                 config.AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true);
             }
-            // Adds any additional server set environment variables
             config.AddEnvironmentVariables();
 
             //Setting up Logging 
-            if (env.IsDevelopment()) {
-               services.AddLogging(logBuilder => logBuilder.AddDebug());
-            }
-            services.AddLogging(logBuilder => logBuilder.AddConsole());
-            services.AddLogging(logBuilder => logBuilder.AddDataBaseLogger());
-            services.AddLogging(logBuilder => logBuilder.AddFileLogger());
-           
-            //Configuring the application options
-            ApplicationOptions appOptions = new();  
-            config.GetSection(nameof(ApplicationOptions)).Bind(appOptions);
-            services.AddSingleton<IApplicationOptions>(appOptions);
+            services.AddLoggingServices(env);
             
             // Setting up the dependency injection Services
-            services.AddSingleton<IDatabaseService, DatabaseService>();
-            services.AddSingleton<IImportService, ImportService>();
+            services.AddServices(config);
 
         #endregion
 
@@ -111,15 +105,16 @@ internal class Program {
             using IHost host = builder.Build();
            
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
+            var appOptions = host.Services.GetRequiredService<IApplicationOptions>();
             try {
                 logger.LogInformation(AppEventId, "Starting App: {assembly.Name}, Version: {assembly.Version}, Environment: {app}", 
-                    Utils.GetAppName(), Utils.GetAppVersion(), appOptions.Environment);
+                    Common.GetAppName(), Common.GetAppVersion(), appOptions.Environment);
 
                 logger.LogInformation(AppEventId, "Connecting to: {conn}", appOptions.ConnectionString);
 
-                logger.LogInformation(AppEventId, "Program Started. User ID = {userName}", Utils.GetUserName());                
+                logger.LogInformation(AppEventId, "Program Started. User ID = {userName}", Common.GetUserName());                
 
-                var ImportService = host.Services.GetRequiredService<IImportService>();
+                var ImportService = host.Services.GetRequiredService<Services.Import.IImportService>();
                 await ImportService.ImportAsync();    
             
                 logger.LogInformation(AppEventId, "Program Completed.");
@@ -147,18 +142,18 @@ internal class Program {
 
     /// <summary>
     /// Checks if there is an environment parameter passed as a command line argument.
-    /// If found, sets the environment variable DOTNET_ENVIRONMENT to the value passed.
+    /// If no environment argument is found and DOTNET_ENVIRONMENT IS NOT set, sets DOTNET_ENVIRONMENT to production.
+    /// If an environment argument is passed, check for valididy and sets DOTNET_ENVIRONMENT to the value passed.
+    /// If the enviroment variable is invalid, returns an error and exits the app .
     /// </summary>
     /// <param name="args">The command line arguments.</param>
     private static void CheckEnvironment(string[] args) {
         string environment = string.Empty;        
         var environments =  new[] { "development", "staging", "production" };
-        // If no args passed, check environment variable
-        // if no environment variable, set production and return
-        // if environment variable is set, return
+        
         if (args.Length == 0) {
             // Set the environment variable
-            if ( string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")) ){
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"))) {
                 Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "production");    
             }
             return;
@@ -168,24 +163,36 @@ internal class Program {
         for (int i = 0; i < args.Length; i++) {
             if ((args[i] == "--environment" || args[i] == "-e") && i + 1 < args.Length) {
                 environment = args[i + 1].Trim().ToLower();
-                bool exists = Array.Exists(environments, e => e == environment);
-                if (exists) {
-                    // Set the environment variable
+                if (Array.Exists(environments, e => e == environment)) {
                     Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", environment);                
-                } else       {
-                    Console.WriteLine($"Invalid Environment: {environment}");
-                    Environment.Exit(1);
-                }                    
-                break;
+                    return;
+                }
+                Console.WriteLine($"Invalid Environment: {environment}");
+                Environment.Exit(1);
             }
         }
     }
 
+
+    /// <summary>
+    /// Checks if the --interactive or -i flag was passed as a command line argument.
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
+    /// <returns>True if the --interactive or -i flag was passed, false otherwise.</returns>
     private static bool IsInteractive(string[] args) {
         return args.Contains("--interactive") || args.Contains( "-i");
     }
 
 
+    /// <summary>
+    /// Waits for the user to press a key before exiting, displaying a message.
+    /// <para>
+    /// This method is used to prevent the console window from closing immediately
+    /// when the application is run manually. It is called after the application
+    /// has completed.
+    /// </para>
+    /// </summary>
+    /// <param name="enabled">True to wait for a key press, false otherwise.</param>
     private static void WaitForInput(bool enabled = false) {
         if (enabled) {
             Console.WriteLine("Press any key to continue...");
@@ -194,22 +201,39 @@ internal class Program {
         }
     }
 
+
+    /// <summary>
+    /// Show the version of the application and exit.
+    /// <para>
+    /// This method is called when either the --version or -v argument is passed
+    /// to the application. It displays the name, build version, environment,
+    /// current user, and interactive mode settings and then exits with 0.
+    /// </para>
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
     public static void ShowVersion(string[] args){
         if (args.Contains("--version") || args.Contains( "-v")) {
-            Console.WriteLine($"Name: {Utils.GetAppName()}");
-            Console.WriteLine($"Build: {Utils.GetAppVersion()}");
+            Console.WriteLine($"Name: {Common.GetAppName()}");
+            Console.WriteLine($"Build: {Common.GetAppVersion()}");
             Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")}");
-            Console.WriteLine($"Current User: {Utils.GetUserName()}");
+            Console.WriteLine($"Current User: {Common.GetUserName()}");
             Console.WriteLine($"Interactive mode: {IsInteractive(args)}");
             WaitForInput(true);
             Environment.Exit(0);
         }
     }
 
+
+    /// <summary>
+    /// Shows the help for the application, including the command line arguments,
+    /// the application options, and the logger options.
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
+    ///
     public static void ShowHelp(string[] args){
         if (args.Contains("--help") || args.Contains( "-h")) {
             Console.WriteLine("EDI Import Configuration Help.");
-            Console.WriteLine($"App version: {Utils.GetAppVersion()}");
+            Console.WriteLine($"App version: {Common.GetAppVersion()}");
             Console.WriteLine("");
 
             Console.WriteLine("Command Line Arguments.");

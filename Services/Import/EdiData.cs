@@ -1,9 +1,9 @@
 using System.Globalization;
-using BundabergSugar.EDIImport.Core;
 using CsvHelper;
 using CsvHelper.Configuration;
+using BundabergSugar.EDIImport.Services.Import.Enums;
 
-namespace BundabergSugar.EDIImport.Models;
+namespace BundabergSugar.EDIImport.Services.Import.Classes;
 
 public class EDIData: IDisposable {
     private readonly FileInfo _fileInformation;

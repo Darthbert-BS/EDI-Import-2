@@ -3,7 +3,10 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace BundabergSugar.EDIImport.Core;
+using BundabergSugar.Core;
+using BundabergSugar.Core.Extensions;
+
+namespace BundabergSugar.Core.Providers.Logging;
 
 [UnsupportedOSPlatform("browser")]
 [ProviderAlias("FileLogger")]
@@ -71,7 +74,7 @@ public sealed class FileLogger(string name, Func<FileLoggerConfiguration> getCur
         if (string.IsNullOrEmpty(path)) {
             return false;
         }else {
-            return Utils.CanWriteToDirectory(Path.GetDirectoryName(path)!) && Utils.CanWriteToFile(path);  
+            return Common.CanWriteToDirectory(Path.GetDirectoryName(path)!) && Common.CanWriteToFile(path);  
         }
     } 
 

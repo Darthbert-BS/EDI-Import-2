@@ -1,9 +1,12 @@
 ﻿using System.Data;
 using Microsoft.Extensions.Logging;
-using BundabergSugar.EDIImport.Core;
-using BundabergSugar.EDIImport.Models;
+using BundabergSugar.Core;
+using BundabergSugar.EDIImport.Services.Import.Enums;
+using BundabergSugar.EDIImport.Services.Import.Classes;
+using BundabergSugar.EDIImport.Services.Database;
 
-namespace BundabergSugar.EDIImport.Services;
+namespace BundabergSugar.EDIImport.Services.Import;
+
 
 public class EdiOperationResult {
     public bool Success { get; set; } = true;
@@ -382,7 +385,7 @@ public class ImportService(IDatabaseService db, IApplicationOptions options, ILo
             using var cmd = db.GetSqlCommand("[if].[BatchInsert]");
             cmd.Parameters.AddWithValue("@DFMID", options.DFMID);
             cmd.Parameters.AddWithValue("@company", options.Company);
-            cmd.Parameters.AddWithValue("@requestor", Utils.GetUserName());
+            cmd.Parameters.AddWithValue("@requestor", Common.GetUserName());
             cmd.Parameters.AddWithValue("@source", "EDIImport");
             cmd.Parameters.Add("@batchID", SqlDbType.Int);
             cmd.Parameters["@batchID"].Direction = ParameterDirection.Output;

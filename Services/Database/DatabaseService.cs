@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 using System.Data;
 
-namespace BundabergSugar.EDIImport.Services;
+namespace BundabergSugar.EDIImport.Services.Database;
 
 public interface IDatabaseService { 
     public SqlTransaction GetExclusiveLock(string table = "EDIImport_lock"); // New method
