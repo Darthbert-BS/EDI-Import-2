@@ -8,9 +8,48 @@
     <VersionRevision Condition="'$(VersionRevision)' == ''">$([System.DateTime]::UtcNow.TimeOfDay.TotalMinutes.ToString("0"))</VersionRevision>
     <BuildVersion>$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</BuildVersion>
     <Year Condition="'$(Year)' == ''">$([System.DateTime]::UtcNow.ToString("yyyy"))</Year>
-    <Configurations>Debug;Release;Production;Development;Staging</Configurations>
+    <Configurations>Debug;Testing;Release</Configurations>
   </PropertyGroup>
 
+  <!-- Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU' ">
+    <EnvironmentName>Debug</EnvironmentName>
+    <EnvironmentPrefix>D</EnvironmentPrefix>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+          
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Testing|AnyCPU'">
+    <EnvironmentName>Testing</EnvironmentName>
+    <EnvironmentPrefix>T</EnvironmentPrefix>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <EnvironmentName>Release</EnvironmentName>
+    <EnvironmentPrefix>R</EnvironmentPrefix>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <None Update="appsettings.Debug.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Testing|AnyCPU'">
+    <None Update="appsettings.Testing.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup> 
+
+
+  <!-- Assembly Info -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -30,15 +69,15 @@
     <RepositoryType>git</RepositoryType>
     <Version>$(BuildVersion)</Version>
     <AssemblyVersion>$(BuildVersion)</AssemblyVersion>
-    <AssemblyFileVersion>$(BuildVersion)</AssemblyFileVersion>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyCopyright">
-      <_Parameter1>Copyright © Bundaberg Sugar 2014 - $(Year)</_Parameter1>
+      <_Parameter1>Copyright © Bundaberg Sugar 2014-$(Year)</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 
+  
 
 <!-- Dependencies -->
   <ItemGroup>
@@ -50,38 +89,7 @@
 
 
 <!-- Configuration and Deployment -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU' ">
-  	<EnvironmentName>Development</EnvironmentName>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
-		
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Staging|AnyCPU'">
-    <EnvironmentName>Staging</EnvironmentName>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
   
-	 <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
-	  <EnvironmentName>Production</EnvironmentName>
-    <Optimize>True</Optimize>
-  </PropertyGroup>
-  
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU'">
-    <None Update="appsettings.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Staging|AnyCPU'">
-    <None Update="appsettings.Staging.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup> 
 
 <!-- Additional resources -->
   <ItemGroup>

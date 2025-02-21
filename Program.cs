@@ -53,6 +53,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using BundabergSugar.Core;
+using BundabergSugar.Core.Extensions;
+
 using BundabergSugar.EDIImport.Services;
 
 namespace BundabergSugar.EDIImport;
@@ -88,7 +90,7 @@ internal class Program {
             // Setting up the application configuration
             config.Sources.Clear();
             config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-            if (!env.IsProduction()) {
+            if (!env.IsInProductionMode()) {
                 config.AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true);
             }
             config.AddEnvironmentVariables();
@@ -149,12 +151,12 @@ internal class Program {
     /// <param name="args">The command line arguments.</param>
     private static void CheckEnvironment(string[] args) {
         string environment = string.Empty;        
-        var environments =  new[] { "development", "staging", "production" };
+        var environments =  new[] { "debug", "testing", "release" };
         
         if (args.Length == 0) {
             // Set the environment variable
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"))) {
-                Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "production");    
+                Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "release");    
             }
             return;
         }
@@ -246,7 +248,7 @@ internal class Program {
             Console.WriteLine("Application Options.");
             Console.WriteLine("Values for configuring the application appsettings.<ENVIRONMENT>.json file. Remember production is the default and uses appsettings.json.");            
             Console.WriteLine("  ApplicationOptions");
-            Console.WriteLine("    Environment: The running environment, Can be any of Development, Staging, Production");
+            Console.WriteLine("    Environment: The running environment, Can be any of Debug, Testing, Release");
             Console.WriteLine("    ConnectionString: The connection string to the database. ");
             Console.WriteLine("        Example: server=SYSPRO;Initial Catalog=Custom; Integrated Security=True; TrustServerCertificate=true; MultipleActiveResultSets=true");
             Console.WriteLine("    Disabled: If true, the application will be disabled. Default is false");
@@ -261,7 +263,7 @@ internal class Program {
             Console.WriteLine("Logger Options.");
             Console.WriteLine("Values for configuring the application Loggers");            
             Console.WriteLine("  FileLogger");
-            Console.WriteLine("    FilePath: The path where to write tj=he log file.");
+            Console.WriteLine("    FilePath: The path where to write the log file.");
             Console.WriteLine("        Example: C:/Program Files/BBS/FOCUS/EDI Import/");
             Console.WriteLine("    FileName: The log file name. Default is EdiImport.log");
             Console.WriteLine("    MaxFileSizeMB: The maximum size of the log file inn Megabytes. Default is 10. Set to 0 to disable chunking.");

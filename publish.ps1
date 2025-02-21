@@ -13,7 +13,7 @@ param (
 function ShowHelp {
     Write-Host "Usage: .\publish.ps1 -AppEnv <Environment> -AppOutput <OutputDirectory> -ProjectPath <ProjectPath> -Runtime <Runtime> [-Help]"
     Write-Host "Parameters:"
-    Write-Host "  -Environment  The environment to publish to. Valid options are: Development, Staging, Production."
+    Write-Host "  -Environment  The environment to publish to. Valid options are: Debug, Testing, Release."
     Write-Host "  -Output       The output directory for the published files."
     Write-Host "  -ProjectPath  The path to the project file (.csproj) to publish."
     Write-Host "  -Verbose      Display detailed build output."
@@ -50,10 +50,10 @@ function CheckParams {
     # Validate the environment parameter
     $AppEnv = $env.Substring(0, 1).ToUpper()
     switch ($AppEnv) {
-        "S" { $AppEnv = "Staging" }
-        "D" { $AppEnv = "Development" }
-        "P" { $AppEnv = "Production" }
-        default { ErrorHandler "Invalid environment parameter. Must be D=Development, S=Staging, P=Production." }
+        "T" { $AppEnv = "Testing" }
+        "D" { $AppEnv = "Debug" }
+        "R" { $AppEnv = "Release" }
+        default { ErrorHandler "Invalid environment parameter. Must be D=Debug, T=Testing, R=Release." }
     }
     return $AppEnv
 }

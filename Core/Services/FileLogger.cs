@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using BundabergSugar.Core;
 using BundabergSugar.Core.Extensions;
 
 namespace BundabergSugar.Core.Providers.Logging;
@@ -36,8 +35,10 @@ public sealed class FileLoggerProvider : ILoggerProvider {
 
 public sealed class FileLoggerConfiguration {
     public int EventId { get; set; }
+    public LogLevel LogLevel { get; set; } = LogLevel.Information;
+    public bool LogEnabled { get; set; } = true;
     public string FilePath { get; set; } = string.Empty;
-    public string FileName { get; set; } = "EdiImport.log";
+    public string FileName { get; set; } = $"{Core.Common.GetAppName()}.log";
     public double MaxFileSizeMB  { get; set; } = 10;
     
 }
@@ -59,10 +60,7 @@ public sealed class FileLogger(string name, Func<FileLoggerConfiguration> getCur
     /// It is called by the <see cref="ILogger"/> implementation before calling <see cref="Log{TState}(LogLevel, EventId, TState, Exception, Func{TState, Exception, string})"/>.
     /// </remarks>
     public bool IsEnabled(LogLevel logLevel) => 
-        logLevel != LogLevel.None 
-        && !string.IsNullOrEmpty(getCurrentConfig().FilePath)
-        && !string.IsNullOrEmpty(getCurrentConfig().FileName);
-
+        logLevel >= getCurrentConfig().LogLevel && getCurrentConfig().LogEnabled; 
 
     
     /// <summary>
@@ -71,11 +69,8 @@ public sealed class FileLogger(string name, Func<FileLoggerConfiguration> getCur
     /// <param name="path">The path to check. If empty or null, the method will return false.</param>
     /// <returns>True if the process has write permissions to the file, false otherwise.</returns>
     private bool HasPermissions(string path) {
-        if (string.IsNullOrEmpty(path)) {
-            return false;
-        }else {
-            return Common.CanWriteToDirectory(Path.GetDirectoryName(path)!) && Common.CanWriteToFile(path);  
-        }
+        if (string.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
+        return Common.CanWriteToDirectory(Path.GetDirectoryName(path)!) && Common.CanWriteToFile(path);  
     } 
 
     /// <summary>
@@ -99,10 +94,7 @@ public sealed class FileLogger(string name, Func<FileLoggerConfiguration> getCur
     {
         try{
             // Make sure the logger is enabled and configured
-            if (!IsEnabled(logLevel)) {
-                Console.WriteLine($"{name} FileLogger is not enabled. Skipping.");    
-                return;
-            }
+            if (!IsEnabled(logLevel)) { return; }
             
             // Check for read/rwite permissions
             FileLoggerConfiguration config = getCurrentConfig();

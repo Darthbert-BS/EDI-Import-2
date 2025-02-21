@@ -39,8 +39,10 @@ namespace BundabergSugar.Core;
 
 
     public static string GetAppName() => Assembly.GetExecutingAssembly().GetName()?.Name ?? "Unknown"; 
+    public static string GetAppName(Assembly assembly) => assembly.GetName()?.Name ?? "Unknown"; 
 
     public static Version GetAppVersion() => Assembly.GetExecutingAssembly().GetName()?.Version ?? new Version(0, 0, 0);   
+    public static Version GetAppVersion(Assembly assembly) => assembly.GetName()?.Version ?? new Version(0, 0, 0);   
 
 
     /// <summary>

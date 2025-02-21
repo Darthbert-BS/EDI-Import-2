@@ -51,6 +51,8 @@ public class DBLoggerParameter {
 
 public sealed class DBLoggerConfiguration {
     public int EventId { get; set; }
+    public LogLevel LogLevel { get; set; } = LogLevel.Information;
+    public bool LogEnabled { get; set; } = true;
     public required string ConnectionString  { get; set; } = string.Empty;
     public required string TargetName { get; set; } = string.Empty;
     public DBLoggerTargetType TargetType { get; set; } = DBLoggerTargetType.Table;
@@ -65,8 +67,8 @@ public sealed class DBLogger(string name, Func<DBLoggerConfiguration> getCurrent
     private readonly string _sqlString = string.Empty;
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default!;
 
-    public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && 
-        !string.IsNullOrEmpty(getCurrentConfig().ConnectionString);
+    public bool IsEnabled(LogLevel logLevel) => 
+        logLevel >= getCurrentConfig().LogLevel && getCurrentConfig().LogEnabled; 
 
 
     private SqlConnection Connection { get {
@@ -101,10 +103,7 @@ public sealed class DBLogger(string name, Func<DBLoggerConfiguration> getCurrent
         Exception? exception,
         Func<TState, Exception?, string> formatter)
     {
-        if (!IsEnabled(logLevel)) {
-            Console.WriteLine($"{name} is not enabled. Skipping.");    
-            return;
-        }
+        if (!IsEnabled(logLevel)) { return; }
 
         try { 
             string message = formatter(state, exception);
