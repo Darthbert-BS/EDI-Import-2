@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 
 namespace BundabergSugar.Core;
@@ -43,6 +44,9 @@ namespace BundabergSugar.Core;
 
     public static Version GetAppVersion() => Assembly.GetExecutingAssembly().GetName()?.Version ?? new Version(0, 0, 0);   
     public static Version GetAppVersion(Assembly assembly) => assembly.GetName()?.Version ?? new Version(0, 0, 0);   
+
+    public static bool IsWindows() => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    public static string RunningOS() => RuntimeInformation.OSDescription;
 
 
     /// <summary>
